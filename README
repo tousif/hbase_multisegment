@@ -1,6 +1,6 @@
   
-FOR OOZIE MAP REDUCE JOB :
-------------------------
+#FOR OOZIE MAP REDUCE JOB :
+#------------------------
   
     generate a scan list
 
@@ -49,8 +49,8 @@ FOR OOZIE MAP REDUCE JOB :
 	    }
 	        
 	        
-For a MapReduce job with Run configuration:
--------------------------------------------
+#For a MapReduce job with Run configuration:
+#-------------------------------------------
 
  Scan scan = new Scan();
     scan.setStartRow(Bytes.toBytes("0|key"));
