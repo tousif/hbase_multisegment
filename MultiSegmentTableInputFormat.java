@@ -133,7 +133,17 @@ implements Configurable {
        localSplits = super.getSplits(context);
        splits.addAll(localSplits);
      }
+     context.getConfiguration().set(TableInputFormat.SCAN,convertScanToString(this.getScan()));
      return splits;
   }
+  
+  
+  private static String convertScanToString(Scan scan) throws IOException {
+	   ByteArrayOutputStream out = new ByteArrayOutputStream();
+	   DataOutputStream dos = new DataOutputStream(out);
+	   scan.write(dos);
+	   return Base64.encodeBytes(out.toByteArray());
+ }
+  
   
 }
