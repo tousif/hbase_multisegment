@@ -1,0 +1,101 @@
+  
+FOR OOZIE MAP REDUCE JOB :
+  
+    generate a scan list
+
+     List<Scan> scanList=new ArrayList<Scan>();
+			
+			for(int i=0;i<10;i++)
+			{
+			
+				    Scan scan = new Scan();
+				    scan.setCaching(100);        // 1 is the default in Scan, which will be bad for MapReduce jobs
+				    scan.setCacheBlocks(false);  // don't set to true for MR jobs
+				    scan.setStartRow(Bytes.toBytes(i+"|"+args[0]));        //start row with bucket prefix
+				    scan.setStopRow(Bytes.toBytes(i+1+"|"+args[0]));       //stop row with bucket prefix
+				    
+				    scanList.add(scan);
+			}
+			
+			
+			 // add scan to jobconfiguration (here i'm using oozie)
+			 
+			 File file = new File(System.getProperty("oozie.action.output.properties"));
+	     Properties props = new Properties();
+	        
+	        for(int k=0;k<scanList.size();k++)
+	        {
+	        	if(k==0)
+	        	{
+	    		props.setProperty("scan", convertScanToString(scanList.get(k)));
+	        	}
+	        	else{
+				props.setProperty("scan"+k, convertScanToString(scanList.get(k)));
+	        	}
+	        }
+	        
+	        OutputStream os = new FileOutputStream(file);
+          props.store(os, "");
+          os.close();
+	        
+	        // convert scan to hash for adding it to MR job conf
+	        
+	        private static String convertScanToString(Scan scan) throws IOException {
+	        ByteArrayOutputStream out = new ByteArrayOutputStream();
+	        DataOutputStream dos = new DataOutputStream(out);
+	        scan.write(dos);
+	        return Base64.encodeBytes(out.toByteArray());
+	    }
+	        
+	        
+For a MapReduce job with Run configuration:
+
+ Scan scan = new Scan();
+    scan.setStartRow(Bytes.toBytes("0|key"));
+    scan.setStopRow(Bytes.toBytes("1|key"));
+    try {
+		scan.setTimeRange(cal.getTimeInMillis(),cal1.getTimeInMillis() );
+	} catch (IOException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
+    
+    Scan scan1 = new Scan();
+    scan1.setStartRow(Bytes.toBytes("1|key"));
+    scan1.setStopRow(Bytes.toBytes("2|key"));
+    try {
+		scan1.setTimeRange(cal.getTimeInMillis(),cal1.getTimeInMillis() );
+	} catch (IOException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
+    
+    Scan scan2 = new Scan();
+    scan2.setStartRow(Bytes.toBytes("2|key"));
+    scan2.setStopRow(Bytes.toBytes("3|key"));
+    try {
+		scan2.setTimeRange(cal.getTimeInMillis(),cal1.getTimeInMillis() );
+	} catch (IOException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
+	
+	 MultiSegmentTableInputFormat inputFormat= new MultiSegmentTableInputFormat();
+    
+    
+    job.getConfiguration().set("hbase.mapreduce.inputtable", "contenttable");
+    job.getConfiguration().set("hbase.mapreduce.scan.count","3");
+    job.getConfiguration().set("hbase.mapreduce.scan.0",convertScanToString(scan));
+    job.getConfiguration().set("hbase.mapreduce.scan.1",convertScanToString(scan1));
+    job.getConfiguration().set("hbase.mapreduce.scan.2",convertScanToString(scan2));
+	        
+	 TableMapReduceUtil.initTableMapperJob(
+    "tablename",        // input HBase table name
+    inputFormat.getScan(),             // Scan instance to control CF and attribute selection
+    Map.class,   // mapper
+    Text.class,             // mapper output key 
+    MapWritable.class,             // mapper output value
+    job,false,MultiSegmentTableInputFormat.class);       
+	        
+	        
+	        
